@@ -30,7 +30,7 @@ VISION_PRETRAINED = "merged2b_s4b_b131k"
 TEXT_MODEL = "microsoft/Phi-3.5-mini-instruct"
 
 
-# Embedding Dimensions
+# Embedding and Projector Configuration
 
 IMAGE_EMBED_DIM = 768
 TEXT_EMBED_DIM = 3072
@@ -38,6 +38,9 @@ TEXT_EMBED_DIM = 3072
 PROJECTOR_INPUT_DIM = IMAGE_EMBED_DIM
 PROJECTOR_HIDDEN_DIM = 1536
 PROJECTOR_OUTPUT_DIM = IMAGE_EMBED_DIM
+
+PROJECTOR_ACTIVATION = "relu"
+PROJECTOR_DROPOUT = 0.0
 
 
 # Training
