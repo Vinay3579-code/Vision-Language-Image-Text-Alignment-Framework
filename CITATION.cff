@@ -1,1 +1,13 @@
+cff-version: 1.2.0
 
+title: Image-Text Alignment Framework
+
+authors:
+- family-names: Vinay3579-code
+  given-names: Vinay M Madgi
+
+version: 1.0
+
+date-released: 2026
+
+license: MIT
