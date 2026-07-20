@@ -88,21 +88,12 @@ RECALL_VALUES = (1, 5, 10)
 
 # Checkpoints
 
-PROJECTOR_CHECKPOINT = (
-    CHECKPOINT_DIR / "projector_eva02_phi35_hybrid.pt"
-)
-
-MSE_PROJECTOR_CHECKPOINT = (
-    CHECKPOINT_DIR / "projector_mse.pt"
-)
-
-REGRESSION_PROJECTOR_CHECKPOINT = (
-    CHECKPOINT_DIR / "projector_regression.pt"
-)
-
-LORA_CHECKPOINT = (
-    CHECKPOINT_DIR / "lora_rank4"
-)
+CHECKPOINTS = {
+    "phase1": CHECKPOINT_DIR / "projector_phase1_mse.pt",
+    "phase2": CHECKPOINT_DIR / "projector_phase2_regression.pt",
+    "phase3": CHECKPOINT_DIR / "projector_phase3_hybrid.pt",
+    "lora_rank4": CHECKPOINT_DIR / "lora_rank4",
+}
 
 
 # Device
