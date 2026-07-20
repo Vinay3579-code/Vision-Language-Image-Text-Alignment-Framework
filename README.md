@@ -1,33 +1,399 @@
-Title
+# Image-Text Alignment Framework for Fashion Vision-Language Models
 
-Overview
+<p align="center">
 
-Features
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)]()
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red.svg)]()
+[![Transformers](https://img.shields.io/badge/HuggingFace-Transformers-yellow.svg)]()
+[![OpenCLIP](https://img.shields.io/badge/OpenCLIP-EVA02--L14-green.svg)]()
 
-Architecture
+</p>
 
-Training Pipeline
+---
 
-Dataset
+## Overview
 
-Installation
+This repository contains the official implementation of our **Image–Text Alignment Framework** for fashion vision-language models.
 
-Usage
+Unlike conventional multimodal architectures that rely on cross-attention, feature fusion, or end-to-end fine-tuning, the proposed framework performs **phase-wise metric learning** by training only a lightweight image projection module while keeping both the visual encoder and text encoder frozen.
 
-Training
+The framework learns a shared embedding space where projected visual embeddings are aligned with frozen semantic text embeddings using metric learning objectives.
 
-Evaluation
+---
 
-Results
+## Key Contributions
 
-Ablation
+- Phase-wise Image–Text Alignment Framework
+- Frozen EVA02-CLIP Vision Encoder
+- Frozen Phi-3.5 Text Embedding Space
+- Lightweight Trainable Projection Layer
+- Metric Learning based Alignment
+- Hybrid InfoNCE + Normalized MSE Optimization
+- Efficient Fashion Retrieval
+- Out-of-Domain (OOD) Validation
+- Ablation Studies
+- LoRA Baseline Comparison
 
-Qualitative Results
+---
 
-Repository Structure
+# Framework
 
-Citation
+<p align="center">
 
-License
+<img src="figures/architecture.png" width="1000">
 
-Acknowledgements
+</p>
+
+---
+
+# Repository Structure
+
+```text
+Image-Text-Alignment-Framework/
+
+│
+
+├── configs/
+│ └── config.py
+
+│
+
+├── src/
+│ ├── model.py
+│ ├── projector.py
+│ ├── losses.py
+│ ├── utils.py
+│ ├── build_database.py
+│ ├── retrieve.py
+│ └── evaluate.py
+
+│
+
+├── training/
+│ ├── phase1.py
+│ ├── phase2.py
+│ ├── phase2_hidden.py
+│ ├── phase3_ac_v2.py
+│ └── lora_train.py
+
+│
+
+├── evaluation/
+│ ├── evaluate.py
+│ ├── ablation.py
+│ ├── statistics.py
+│ └── retrieval_metrics.py
+
+│
+
+├── demo/
+│ ├── demo.py
+│ └── app.py
+
+│
+
+├── figures/
+
+│
+
+├── docs/
+
+│
+
+├── scripts/
+
+│
+
+├── datasets/
+
+│
+
+├── checkpoints/
+
+│
+
+├── README.md
+
+├── requirements.txt
+
+└── .gitignore
+```
+
+---
+
+# Methodology
+
+The proposed framework consists of four stages.
+
+### Stage 1
+
+Input Processing
+
+- Fashion Images
+- Fashion Captions
+
+---
+
+### Stage 2
+
+Frozen Backbone
+
+Visual Encoder
+
+- EVA02-CLIP-L-14
+
+Text Encoder
+
+- Phi-3.5-mini-Instruct
+
+Both encoders remain frozen throughout alignment training.
+
+---
+
+### Stage 3
+
+Image Projection Alignment
+
+Only the image projection layer is trainable.
+
+```
+Image Embedding (768)
+
+↓
+
+FC Layer (768 → 1536)
+
+↓
+
+ReLU
+
+↓
+
+FC Layer (1536 → 768)
+
+↓
+
+Projected Image Embedding
+```
+
+The projected image embedding is aligned with frozen text embeddings using cosine similarity.
+
+---
+
+### Stage 4
+
+Alignment Evaluation
+
+The framework computes
+
+- Positive Image-Text Similarity
+- Negative Image-Text Similarity
+- Alignment Gap
+- Retrieval Metrics
+
+---
+
+# Training Strategy
+
+## Phase 1
+
+Projection Warm-up
+
+Loss
+
+- MSE
+
+---
+
+## Phase 2
+
+Projection Refinement
+
+Loss
+
+- Regression Loss
+
+---
+
+## Phase 3
+
+Hybrid Metric Learning
+
+Loss
+
+- InfoNCE
+- Normalized MSE
+
+---
+
+# Loss Function
+
+The proposed framework optimizes
+
+\[
+\mathcal{L}
+=
+\mathcal{L}_{InfoNCE}
++
+\lambda
+\mathcal{L}_{NMSE}
+\]
+
+where
+
+- InfoNCE improves discriminative alignment.
+- Normalized MSE preserves embedding consistency.
+
+---
+
+# Datasets
+
+The framework was trained and evaluated using
+
+- DeepFashion
+- Polyvore
+- Amazon Fashion
+- FashionIQ
+
+---
+
+# Installation
+
+Clone repository
+
+```bash
+git clone https://github.com/<username>/Image-Text-Alignment-Framework.git
+```
+
+Move into repository
+
+```bash
+cd Image-Text-Alignment-Framework
+```
+
+Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# Training
+
+Phase 1
+
+```bash
+python training/phase1.py
+```
+
+Phase 2
+
+```bash
+python training/phase2.py
+```
+
+Phase 3
+
+```bash
+python training/phase3_ac_v2.py
+```
+
+---
+
+# Evaluation
+
+```bash
+python evaluation/evaluate.py
+```
+
+---
+
+# Demo
+
+```bash
+python demo/demo.py
+```
+
+---
+
+# Experimental Results
+
+The framework is evaluated using
+
+- Recall@1
+- Recall@5
+- Recall@10
+- Image-to-Text Retrieval
+- Text-to-Image Retrieval
+- Cosine Similarity
+- Alignment Gap
+- Mean
+- Standard Deviation
+
+---
+
+# Ablation Study
+
+The following variants are compared
+
+| Model | Projection | Loss |
+|--------|------------|------|
+| MSE Only | ✓ | MSE |
+| Regression Only | ✓ | Regression |
+| Hybrid (Ours) | ✓ | InfoNCE + NMSE |
+| LoRA Baseline | LoRA | Contrastive |
+
+---
+
+# Qualitative Results
+
+The repository includes
+
+- Retrieval Examples
+- Matched Image-Text Pairs
+- Mismatched Image-Text Pairs
+- OOD Validation Examples
+
+---
+
+# Future Work
+
+- Multimodal Conversational Fashion Assistant
+- User Preference Modeling
+- Style Personalization
+- Multi-turn Dialogue
+- Large-scale Fashion Retrieval
+
+---
+
+# Citation
+
+```bibtex
+@article{yourpaper2026,
+  title={Image-Text Alignment Framework for Fashion Vision-Language Models},
+  author={Your Name and Coauthors},
+  journal={Under Review},
+  year={2026}
+}
+```
+
+(Update this after paper acceptance.)
+
+---
+
+# Contact
+
+For questions regarding this work, please open an issue in this repository.
+
+---
+
+## Acknowledgement
+
+This work utilizes
+
+- PyTorch
+- Hugging Face Transformers
+- OpenCLIP
+- EVA02
+- Phi-3.5
