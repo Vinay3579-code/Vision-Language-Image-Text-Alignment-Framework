@@ -1,12 +1,4 @@
-"""
-Projection module used for image-text alignment.
-
-The visual encoder produces a fixed image embedding. This module learns
-a lightweight mapping that projects the frozen image representation into
-a space that aligns more closely with the frozen text embeddings.
-
-Only this module is optimized during training.
-"""
+# Projection network for aligning image embeddings with the text embedding space.
 
 from __future__ import annotations
 
@@ -16,19 +8,8 @@ import torch.nn as nn
 
 class VisualProjector(nn.Module):
     """
-    Lightweight projection network for image embeddings.
-
-    Architecture
-    ------------
-    Input (768)
-        ↓
-    Linear (768 → 1536)
-        ↓
-    ReLU
-        ↓
-    Linear (1536 → 768)
-        ↓
-    LayerNorm
+    Two-layer MLP used to project frozen image embeddings into the
+    shared image-text embedding space.
     """
 
     def __init__(
@@ -36,50 +17,62 @@ class VisualProjector(nn.Module):
         input_dim: int = 768,
         hidden_dim: int = 1536,
         output_dim: int = 768,
-    ) -> None:
+        activation: str = "relu",
+        dropout: float = 0.0,
+    ):
         super().__init__()
 
-        self.network = nn.Sequential(
+        activation = activation.lower()
+
+        activations = {
+            "relu": nn.ReLU(inplace=True),
+            "gelu": nn.GELU(),
+            "silu": nn.SiLU(),
+        }
+
+        if activation not in activations:
+            raise ValueError(
+                f"Unsupported activation '{activation}'. "
+                f"Choose from {list(activations.keys())}."
+            )
+
+        layers = [
             nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(inplace=True),
+            activations[activation],
+        ]
+
+        if dropout > 0:
+            layers.append(nn.Dropout(dropout))
+
+        layers.extend([
             nn.Linear(hidden_dim, output_dim),
             nn.LayerNorm(output_dim),
-        )
+        ])
+
+        self.network = nn.Sequential(*layers)
 
         self._initialize_weights()
 
     def _initialize_weights(self) -> None:
-        """
-        Initialize linear layers using Xavier initialization.
 
-        This generally provides stable convergence for shallow
-        projection networks.
-        """
         for module in self.modules():
+
             if isinstance(module, nn.Linear):
                 nn.init.xavier_uniform_(module.weight)
-                nn.init.zeros_(module.bias)
 
-    def forward(self, image_embedding: torch.Tensor) -> torch.Tensor:
-        """
-        Project image embeddings into the shared embedding space.
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
 
-        Parameters
-        ----------
-        image_embedding : torch.Tensor
-            Tensor of shape (batch_size, input_dim)
+    def forward(
+        self,
+        image_embeddings: torch.Tensor,
+    ) -> torch.Tensor:
 
-        Returns
-        -------
-        torch.Tensor
-            Projected embedding of shape (batch_size, output_dim)
-        """
-        return self.network(image_embedding)
+        return self.network(image_embeddings)
 
     @property
     def num_parameters(self) -> int:
 
-        # Returns the number of trainable parameters.
         return sum(
             p.numel()
             for p in self.parameters()
@@ -87,7 +80,8 @@ class VisualProjector(nn.Module):
         )
 
     def __repr__(self) -> str:
+
         return (
-            f"{self.__class__.__name__}("
-            f"trainable_parameters={self.num_parameters:,})"
+            f"{self.__class__.__name__}"
+            f"(parameters={self.num_parameters:,})"
         )
