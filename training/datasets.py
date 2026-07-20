@@ -20,15 +20,18 @@ class FashionDataset(Dataset):
         annotations_file,
         image_root,
         transform=None,
+        image_column="image",
+        text_column="caption",
     ):
 
-        self.annotations = pd.read_csv(
-            annotations_file
-        )
-
+        self.annotations = pd.read_csv(annotations_file)
+    
         self.image_root = Path(image_root)
-
+    
         self.transform = transform
+    
+        self.image_column = image_column
+        self.text_column = text_column
 
     def __len__(self):
 
@@ -39,13 +42,13 @@ class FashionDataset(Dataset):
         sample = self.annotations.iloc[index]
 
         image = Image.open(
-            self.image_root / sample["image"]
+            self.image_root / sample[self.image_column]
         ).convert("RGB")
-
+        
         if self.transform is not None:
             image = self.transform(image)
-
+        
         return {
             "image": image,
-            "caption": sample["caption"],
+            "caption": sample[self.text_column],
         }
