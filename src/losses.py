@@ -57,6 +57,35 @@ class NormalizedMSELoss(nn.Module):
         return F.mse_loss(image_embeddings, text_embeddings)
 
 
+class RegressionLoss(torch.nn.Module):
+
+    # Regression objective based on Smooth L1 (Huber) loss.
+
+    def __init__(
+        self,
+        beta: float = 1.0,
+    ):
+
+        super().__init__()
+
+        self.loss_fn = torch.nn.SmoothL1Loss(beta=beta)
+
+    def forward(
+        self,
+        projected_embeddings: torch.Tensor,
+        text_embeddings: torch.Tensor,
+    ):
+
+        loss = self.loss_fn(
+            projected_embeddings,
+            text_embeddings,
+        )
+
+        return {
+            "loss": loss,
+        }
+
+
 class HybridAlignmentLoss(nn.Module):
     """
     Hybrid objective used in the proposed framework.
