@@ -101,10 +101,9 @@ COMPUTE_STD = True
 # Checkpoints
 
 CHECKPOINTS = {
-    "phase1": CHECKPOINT_DIR / "projector_phase1_mse.pt",
-    "phase2": CHECKPOINT_DIR / "projector_phase2_regression.pt",
-    "phase3": CHECKPOINT_DIR / "projector_phase3_hybrid.pt",
-    "lora_rank4": CHECKPOINT_DIR / "lora_rank4",
+    "phase1": CHECKPOINT_DIR / "projector_phase1.pt",
+    "phase2": CHECKPOINT_DIR / "projector_phase2.pt",
+    "phase3": CHECKPOINT_DIR / "projector_phase3.pt",
 }
 
 
