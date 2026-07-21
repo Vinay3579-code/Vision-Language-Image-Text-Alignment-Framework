@@ -23,7 +23,11 @@ class FrozenImageEncoder(nn.Module):
     normalized image embeddings.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        visual_encoder,
+        preprocess,
+    ):
         super().__init__()
 
         model, _, preprocess = open_clip.create_model_and_transforms(
@@ -31,9 +35,8 @@ class FrozenImageEncoder(nn.Module):
             pretrained=VISION_PRETRAINED,
         )
 
-        self.encoder = model.visual
+        self.encoder = visual_encoder
         self.preprocess = preprocess
-        self.tokenizer = open_clip.get_tokenizer(VISION_MODEL)
 
         self.encoder.eval()
 
@@ -49,7 +52,6 @@ class FrozenImageEncoder(nn.Module):
 
 
 class FrozenTextEncoder(nn.Module):
-    class FrozenTextEncoder(nn.Module):
     """
     Frozen CLIP text encoder.
 
@@ -58,7 +60,10 @@ class FrozenTextEncoder(nn.Module):
     embedding space.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        clip_model,
+    ):
         super().__init__()
 
         model, _, _ = open_clip.create_model_and_transforms(
@@ -66,7 +71,7 @@ class FrozenTextEncoder(nn.Module):
             pretrained=VISION_PRETRAINED,
         )
 
-        self.encoder = model
+        self.encoder = clip_model
         self.tokenizer = open_clip.get_tokenizer(VISION_MODEL)
 
         self.encoder.eval()
@@ -82,7 +87,7 @@ class FrozenTextEncoder(nn.Module):
 
         tokens = self.tokenizer(texts)
 
-        tokens = tokens.to(DEVICE)
+        tokens = tokens.to(next(self.encoder.parameters()).device)
 
         embeddings = self.encoder.encode_text(tokens)
 
