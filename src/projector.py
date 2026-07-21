@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
-class VisualProjector(nn.Module):
+class ProjectionHead(nn.Module):
     """
-    Two-layer MLP used to project frozen image embeddings into the
+    Projection head that maps frozen image embeddings into the
     shared image-text embedding space.
     """
 
@@ -19,6 +20,7 @@ class VisualProjector(nn.Module):
         output_dim: int = 768,
         activation: str = "relu",
         dropout: float = 0.0,
+        normalize: bool = PROJECTOR_NORMALIZE,
     ):
         super().__init__()
 
@@ -51,6 +53,8 @@ class VisualProjector(nn.Module):
 
         self.network = nn.Sequential(*layers)
 
+        self.normalize = normalize
+
         self._initialize_weights()
 
     def _initialize_weights(self) -> None:
@@ -68,7 +72,17 @@ class VisualProjector(nn.Module):
         image_embeddings: torch.Tensor,
     ) -> torch.Tensor:
 
-        return self.network(image_embeddings)
+        projected = self.network(image_embeddings)
+        
+        if self.normalize:
+            projected = F.normalize(
+                projected,
+                p=2,
+                dim=-1,
+            )
+    
+        return projected
+    
 
     @property
     def num_parameters(self) -> int:
