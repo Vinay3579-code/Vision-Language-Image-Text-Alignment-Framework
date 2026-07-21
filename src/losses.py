@@ -10,14 +10,23 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from configs.config import TEMPERATURE
+from configs.config import LAMBDA_NMSE
+from typing import Dict
 
 
 class InfoNCELoss(nn.Module):
 
-    # Symmetric InfoNCE loss for image-text alignment.
-    def __init__(self, temperature: float = 0.07):
+    """
+    Symmetric InfoNCE loss used to maximize image-text similarity
+    while minimizing mismatched pairs.
+    """
+    
+    def __init__(self, temperature: float = TEMPERATURE):
         super().__init__()
         self.temperature = temperature
+        if temperature <= 0:
+            raise ValueError("Temperature must be positive.")
 
     def forward(
         self,
@@ -28,8 +37,7 @@ class InfoNCELoss(nn.Module):
         image_embeddings = F.normalize(image_embeddings, dim=-1)
         text_embeddings = F.normalize(text_embeddings, dim=-1)
 
-        logits = image_embeddings @ text_embeddings.T
-        logits = logits / self.temperature
+        logits = (image_embeddings @ text_embeddings.T) / self.temperature
 
         targets = torch.arange(
             logits.size(0),
@@ -57,35 +65,6 @@ class NormalizedMSELoss(nn.Module):
         return F.mse_loss(image_embeddings, text_embeddings)
 
 
-class RegressionLoss(torch.nn.Module):
-
-    # Regression objective based on Smooth L1 (Huber) loss.
-
-    def __init__(
-        self,
-        beta: float = 1.0,
-    ):
-
-        super().__init__()
-
-        self.loss_fn = torch.nn.SmoothL1Loss(beta=beta)
-
-    def forward(
-        self,
-        projected_embeddings: torch.Tensor,
-        text_embeddings: torch.Tensor,
-    ):
-
-        loss = self.loss_fn(
-            projected_embeddings,
-            text_embeddings,
-        )
-
-        return {
-            "loss": loss,
-        }
-
-
 class HybridAlignmentLoss(nn.Module):
     """
     Hybrid objective used in the proposed framework.
@@ -98,7 +77,7 @@ class HybridAlignmentLoss(nn.Module):
     def __init__(
         self,
         temperature: float = 0.07,
-        lambda_nmse: float = 0.10,
+        lambda_nmse: float = LAMBDA_NMSE,
     ):
         super().__init__()
 
@@ -111,7 +90,8 @@ class HybridAlignmentLoss(nn.Module):
         self,
         image_embeddings: torch.Tensor,
         text_embeddings: torch.Tensor,
-    ):
+    ) -> Dict[str, torch.Tensor]:
+        
         info_loss = self.infonce(
             image_embeddings,
             text_embeddings,
