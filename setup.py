@@ -6,8 +6,7 @@ setup(
     author="Vinay M Madgi", "Sahana Gidnandi", "Nisha D", "Kshitij H", "Channabasappa Muttal",
     author_email="vinaymadgi28@gmail.com", "sahanagidnandi@gmail.com", "nishadodwad5@gmail.com", "01fe23bci010@kletech.ac.in", "channabasappa.muttal@kletech.ac.in",
     description=(
-        "Official implementation of the image-text alignment framework "
-        "for fashion vision-language models."
+        "Official implementation of the Springer paper 'Vision-Language Models for Fashion Conversational Assistants with Multimodal Dialogues'"
     ),
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
