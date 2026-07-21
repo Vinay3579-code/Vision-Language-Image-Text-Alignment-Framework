@@ -8,6 +8,11 @@ import torch
 from tqdm import tqdm
 
 from src.checkpoint import save_projector
+from src.metrics import evaluate_alignment
+
+from src.metrics import (
+    evaluate_alignment,
+)
 
 
 class Trainer:
@@ -42,6 +47,8 @@ class Trainer:
         self.model.train()
 
         total_loss = 0.0
+        total_infonce = 0.0
+        total_nmse = 0.0
 
         progress = tqdm(
             dataloader,
@@ -66,6 +73,8 @@ class Trainer:
             )
 
             loss = loss_dict["loss"]
+            info_loss = loss_dict["infonce"]
+            nmse_loss = loss_dict["nmse"]
 
             self.optimizer.zero_grad()
 
@@ -81,15 +90,23 @@ class Trainer:
             self.optimizer.step()
 
             total_loss += loss.item()
+            total_infonce += info_loss.item()
+            total_nmse += nmse_loss.item()
 
             progress.set_postfix(
-                loss=f"{loss.item():.4f}"
+                loss=f"{loss.item():.4f}",
+                infonce-f"{info_loss.item():.4f}",
+                nmse=f"{nmse_loss.item():.4f}",
             )
 
         if self.scheduler is not None:
             self.scheduler.step()
 
-        return total_loss / len(dataloader)
+        return {
+            "loss": total_loss / len(dataloader),
+            "infonce": total_infonce / len(dataloader),
+            "nmse": total_nmse / len(dataloader),
+        }
 
     def fit(
         self,
@@ -97,7 +114,15 @@ class Trainer:
         epochs,
     ):
 
-        history = []
+        history = {
+            "loss": [],
+            "infonce": [],
+            "nmse": [],
+            "positive_similarity": [],
+            "negative_similarity": [],
+            "alignment_gap": [],
+            "positive_similarity_std": [],
+        }
 
         overall_start = time.perf_counter()
 
@@ -105,7 +130,7 @@ class Trainer:
 
             epoch_start = time.perf_counter()
 
-            loss = self.train_epoch(
+            train_stats = self.train_epoch(
                 dataloader,
             )
 
@@ -114,12 +139,104 @@ class Trainer:
                 - epoch_start
             )
 
-            history.append(loss)
+            self.model.eval()
+
+            all_projected_embeddings = []
+            all_text_embeddings = []
+            
+            with torch.inference_mode():
+            
+                for batch in dataloader:
+            
+                    images = batch["image"].to(self.device)
+                    captions = batch["caption"]
+            
+                    outputs = self.model(
+                        images,
+                        captions,
+                    )
+            
+                    all_projected_embeddings.append(
+                        outputs["projected_embeddings"]
+                    )
+            
+                    all_text_embeddings.append(
+                        outputs["text_embeddings"]
+                    )
+            
+            projected_embeddings = torch.cat(
+                all_projected_embeddings,
+                dim=0,
+            )
+            
+            text_embeddings = torch.cat(
+                all_text_embeddings,
+                dim=0,
+            )
+            
+            metrics = evaluate_alignment(
+                projected_embeddings,
+                text_embeddings,
+            )
+
+            history["loss"].append(train_stats["loss"])
+            history["infonce"].append(train_stats["infonce"])
+            history["nmse"].append(train_stats["nmse"])
+            
+            history["positive_similarity"].append(
+                metrics["Mean Positive Similarity"]
+            )
+            
+            history["negative_similarity"].append(
+                metrics["Mean Negative Similarity"]
+            )
+            
+            history["alignment_gap"].append(
+                metrics["Alignment Gap"]
+            )
+            
+            history["positive_similarity_std"].append(
+                metrics["Positive Similarity Standard Deviation"]
+            )
 
             print(
-                f"Epoch {epoch:02d}/{epochs} "
-                f"| Loss: {loss:.4f} "
-                f"| Time: {epoch_time:.2f}s"
+                f"\nEpoch {epoch:02d}/{epochs}"
+            )
+            
+            print(
+                f"Loss                     : {train_stats['loss']:.4f}"
+            )
+            
+            print(
+                f"InfoNCE                  : {train_stats['infonce']:.4f}"
+            )
+            
+            print(
+                f"NMSE                     : {train_stats['nmse']:.4f}"
+            )
+            
+            print(
+                f"Mean Positive Similarity : "
+                f"{metrics['Mean Positive Similarity']:.4f}"
+            )
+            
+            print(
+                f"Mean Negative Similarity : "
+                f"{metrics['Mean Negative Similarity']:.4f}"
+            )
+            
+            print(
+                f"Alignment Gap            : "
+                f"{metrics['Alignment Gap']:.4f}"
+            )
+            
+            print(
+                f"Positive Similarity Standard Deviation      : "
+                f"{metrics['Positive Similarity Standard Deviation']:.4f}"
+            )
+            
+            print(
+                f"Epoch Time               : {epoch_time:.2f}s"
             )
 
         total_time = (
