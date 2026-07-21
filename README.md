@@ -61,7 +61,7 @@ This significantly reduces trainable parameters while maintaining strong image-t
 
 # Repository Structure
 
-```
+```text
 FashionAlignment/
 
 │
