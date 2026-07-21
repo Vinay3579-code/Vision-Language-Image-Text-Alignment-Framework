@@ -40,12 +40,6 @@ This significantly reduces trainable parameters while maintaining strong image-t
 - Lightweight Trainable Projection Layer
 - Metric Learning based Alignment
 - Hybrid InfoNCE + Normalized MSE Optimization
-- Positive Image-Text Similarity
-- Negative Image-Text Similarity
-- Alignment Gap
-- Out-of-Domain (OOD) Validation
-- Ablation Studies
-- LoRA Baseline Comparison
 
 ---
 
@@ -57,7 +51,7 @@ This significantly reduces trainable parameters while maintaining strong image-t
 
 </p>
 
-```
+---
 
 # Repository Structure
 
