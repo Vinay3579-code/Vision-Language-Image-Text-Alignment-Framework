@@ -1,9 +1,10 @@
 """
-Phase 1 training.
+Phase 1 Training.
 
-This stage initializes the projection network using
-Mean Squared Error (MSE) loss while keeping both
-the image encoder and text encoder frozen.
+This stage initializes the Projection Head using the
+Normalized Mean Squared Error (NMSE) loss while keeping
+both the EVA02-CLIP vision encoder and text encoder
+frozen.
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from torch.utils.data import DataLoader
 
 from configs.config import (
     BATCH_SIZE,
-    NUM_EPOCHS,
+    PHASE1_EPOCHS,
     LEARNING_RATE,
     WEIGHT_DECAY,
     NUM_WORKERS,
@@ -73,7 +74,7 @@ def main():
 
     trainer.fit(
         dataloader,
-        epochs=NUM_EPOCHS,
+        epochs=PHASE1_EPOCHS,
     )
 
 
