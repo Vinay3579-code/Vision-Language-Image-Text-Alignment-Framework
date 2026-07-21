@@ -11,6 +11,7 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 import open_clip
+from typing import Dict
 
 from src.encoders import (
     FrozenImageEncoder,
@@ -33,32 +34,32 @@ class ImageTextAlignmentModel(nn.Module):
 
     Components
     ----------
-    - Frozen EVA02 image encoder
+    - Frozen EVA02-CLIP vision encoder
     - Frozen CLIP text encoder
-    - Trainable projection network
+    - Trainable projection head
     """
 
     def __init__(self):
         super().__init__()
 
-        clip_model, _, preprocess = open_clip.create_model_and_transforms(
+        foundation_model, _, preprocess = open_clip.create_model_and_transforms(
             VISION_MODEL,
             pretrained=VISION_PRETRAINED,
         )
         
         self.image_encoder = FrozenImageEncoder(
-            clip_model.visual,
+            foundation_model.visual,
             preprocess,
         )
         
         self.text_encoder = FrozenTextEncoder(
-            clip_model,
+            foundation_model,
         )
 
         self.projector = ProjectionHead(
-            input_dim=IMAGE_EMBED_DIM,
+            input_dim=VISION_EMBED_DIM,
             hidden_dim=PROJECTOR_HIDDEN_DIM,
-            output_dim=IMAGE_EMBED_DIM,
+            output_dim=VISION_EMBED_DIM,
         )
 
     def encode_image(self, images: torch.Tensor) -> torch.Tensor:
@@ -86,7 +87,7 @@ class ImageTextAlignmentModel(nn.Module):
         self,
         images: torch.Tensor,
         texts: list[str],
-    ) -> dict:
+    ) -> Dict[str, torch.Tensor]:
 
         image_embeddings = self.encode_image(images)
 
@@ -106,7 +107,7 @@ class ImageTextAlignmentModel(nn.Module):
     def trainable_parameters(self) -> int:
         return sum(
             p.numel()
-            for p in self.projector.parameters()
+            for p in self.parameters()
             if p.requires_grad
         )
 
@@ -132,6 +133,7 @@ class ImageTextAlignmentModel(nn.Module):
         print(f"Image Encoder : {self.image_encoder.__class__.__name__}")
         print(f"Text Encoder  : {self.text_encoder.__class__.__name__}")
         print(f"Vision Backbone : {VISION_MODEL}")
+        print(f"Pretrained Weights : {VISION_PRETRAINED}")
         print(f"Projector     : {self.projector.__class__.__name__}")
 
         print()
