@@ -1,26 +1,26 @@
 """
-Phase 2 Training.
+Phase 2 Evaluation.
 
-This stage refines the Projection Head using the
-InfoNCE loss while keeping both the EVA02-CLIP vision
-encoder and text encoder frozen.
+This stage evaluates the trained Projection Head by
+measuring image-text alignment quality using cosine
+similarity statistics.
 
-The Projection Head is initialized from the Phase 1
-checkpoint trained with the Normalized MSE loss.
+The following metrics are reported:
+
+1. Mean Positive Similarity
+2. Mean Negative Similarity
+3. Alignment Gap
+4. Positive Similarity Standard Deviation
 """
 
 from __future__ import annotations
 
-from torch.optim import AdamW
+import torch
 from torch.utils.data import DataLoader
 
 from configs.config import (
     BATCH_SIZE,
-    PHASE2_EPOCHS,
-    LEARNING_RATE,
-    WEIGHT_DECAY,
     NUM_WORKERS,
-    GRADIENT_CLIP,
     SEED,
     CHECKPOINTS,
 )
@@ -32,25 +32,33 @@ from src.seed import (
 )
 
 from src.model import ImageTextAlignmentModel
-from src.losses import InfoNCELoss
+from src.metrics import (
+    evaluate_alignment,
+    print_metrics,
+)
 from src.checkpoint import load_projector
+
 from training.datasets import FashionDataset
-from training.trainer import Trainer
 
 
 def main():
 
+
+    # Reproducibility
+
     set_seed(SEED)
+
+    
+    # Load model
 
     model = ImageTextAlignmentModel()
 
-
-    # Initialize the Projection Head from Phase 1
-  
     load_projector(
         projector=model.projector,
         filepath=CHECKPOINTS["phase1"],
     )
+
+    model.eval()
 
 
     # Dataset
@@ -64,40 +72,67 @@ def main():
     dataloader = DataLoader(
         dataset,
         batch_size=BATCH_SIZE,
-        shuffle=True,
+        shuffle=False,
         num_workers=NUM_WORKERS,
         worker_init_fn=seed_worker,
         generator=create_generator(SEED),
     )
 
 
-    # Optimizer
+    # Collect embeddings
 
-    optimizer = AdamW(
-        model.projector.parameters(),
-        lr=LEARNING_RATE,
-        weight_decay=WEIGHT_DECAY,
+    projected_embeddings = []
+    text_embeddings = []
+
+    with torch.inference_mode():
+
+        for batch in dataloader:
+
+            images = batch["image"].to(
+                next(model.parameters()).device
+            )
+
+            captions = batch["caption"]
+
+            outputs = model(
+                images,
+                captions,
+            )
+
+            projected_embeddings.append(
+                outputs["projected_embeddings"]
+            )
+
+            text_embeddings.append(
+                outputs["text_embeddings"]
+            )
+
+    projected_embeddings = torch.cat(
+        projected_embeddings,
+        dim=0,
+    )
+
+    text_embeddings = torch.cat(
+        text_embeddings,
+        dim=0,
     )
 
 
-    # Trainer
+    # Evaluate alignment
 
-    trainer = Trainer(
-        model=model,
-        loss_fn=InfoNCELoss(),
-        optimizer=optimizer,
-        device=model.projector.network[0].weight.device,
-        checkpoint_path=CHECKPOINTS["phase2"],
-        gradient_clip=GRADIENT_CLIP,
+    metrics = evaluate_alignment(
+        projected_embeddings,
+        text_embeddings,
     )
 
-  
-    # Training
+    print()
+    print("=" * 60)
+    print("PHASE 2 IMAGE PROJECTOR EVALUATION")
+    print("=" * 60)
 
-    trainer.fit(
-        dataloader,
-        epochs=PHASE2_EPOCHS,
-    )
+    print_metrics(metrics)
+
+    print("=" * 60)
 
 
 if __name__ == "__main__":
