@@ -1,24 +1,28 @@
 """
 Image-Text Alignment Framework.
 
-This module combines the frozen image encoder, frozen text encoder,
-and the trainable projection network into a single model.
+This module integrates the frozen EVA02-CLIP vision encoder,
+the frozen CLIP text encoder, and the trainable projection
+head into a unified alignment model.
 """
 
 from __future__ import annotations
 
 import torch
 import torch.nn as nn
+import open_clip
 
 from src.encoders import (
     FrozenImageEncoder,
     FrozenTextEncoder,
 )
 
-from src.projector import VisualProjector
+from src.projector import ProjectionHead
 
 from configs.config import (
-    IMAGE_EMBED_DIM,
+    VISION_MODEL,
+    VISION_PRETRAINED,
+    VISION_EMBED_DIM,
     PROJECTOR_HIDDEN_DIM,
 )
 
@@ -30,23 +34,28 @@ class ImageTextAlignmentModel(nn.Module):
     Components
     ----------
     - Frozen EVA02 image encoder
-    - Frozen Phi-3.5 text encoder
+    - Frozen CLIP text encoder
     - Trainable projection network
     """
 
-    def __init__(
-        self,
-        load_text_encoder_4bit: bool = True,
-    ):
+    def __init__(self):
         super().__init__()
 
-        self.image_encoder = FrozenImageEncoder()
-
+        clip_model, _, preprocess = open_clip.create_model_and_transforms(
+            VISION_MODEL,
+            pretrained=VISION_PRETRAINED,
+        )
+        
+        self.image_encoder = FrozenImageEncoder(
+            clip_model.visual,
+            preprocess,
+        )
+        
         self.text_encoder = FrozenTextEncoder(
-            load_in_4bit=load_text_encoder_4bit
+            clip_model,
         )
 
-        self.projector = VisualProjector(
+        self.projector = ProjectionHead(
             input_dim=IMAGE_EMBED_DIM,
             hidden_dim=PROJECTOR_HIDDEN_DIM,
             output_dim=IMAGE_EMBED_DIM,
@@ -122,6 +131,7 @@ class ImageTextAlignmentModel(nn.Module):
 
         print(f"Image Encoder : {self.image_encoder.__class__.__name__}")
         print(f"Text Encoder  : {self.text_encoder.__class__.__name__}")
+        print(f"Vision Backbone : {VISION_MODEL}")
         print(f"Projector     : {self.projector.__class__.__name__}")
 
         print()
