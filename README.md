@@ -1,4 +1,10 @@
-# Image-Text Alignment Framework for Fashion Vision-Language Models
+# Vision-Language Image-Text Alignment for Fashion Recommendation
+
+Official implementation of the image-text alignment framework proposed in the Springer publication:
+
+> **Vision-Language Models for Fashion Conversational Assistants with Multimodal Dialogues**
+
+This repository implements a lightweight image-text alignment framework for the fashion domain using a **frozen EVA02-CLIP foundation model** and a **trainable Projection Head** optimized with a **Hybrid Alignment Loss**.
 
 <p align="center">
 
@@ -11,13 +17,18 @@
 
 ---
 
-## Overview
+# Overview
 
-This repository contains the official implementation of our **Image–Text Alignment Framework** for fashion vision-language models.
+The framework aligns fashion images and textual descriptions into a shared embedding space while training only a lightweight projection network.
 
-Unlike conventional multimodal architectures that rely on cross-attention, feature fusion, or end-to-end fine-tuning, the proposed framework performs **phase-wise metric learning** by training only a lightweight image projection module while keeping both the visual encoder and text encoder frozen.
+Unlike conventional multimodal fine-tuning approaches, the vision encoder and text encoder remain completely frozen throughout training.
 
-The framework learns a shared embedding space where projected visual embeddings are aligned with frozen semantic text embeddings using metric learning objectives.
+Only the Projection Head is optimized using a hybrid objective consisting of:
+
+- Normalized Mean Squared Error (NMSE)
+- InfoNCE Contrastive Loss
+
+This significantly reduces trainable parameters while maintaining strong image-text alignment.
 
 ---
 
@@ -38,7 +49,7 @@ The framework learns a shared embedding space where projected visual embeddings 
 
 ---
 
-# Framework
+# Architecture
 
 <p align="center">
 
@@ -46,231 +57,146 @@ The framework learns a shared embedding space where projected visual embeddings 
 
 </p>
 
----
+```
 
 # Repository Structure
 
-```text
-Image-Text-Alignment-Framework/
+```
+FashionAlignment/
 
 │
-
 ├── configs/
-│ └── config.py
-
+│   └── config.py
 │
-
 ├── src/
-│ ├── model.py
-│ ├── projector.py
-│ ├── losses.py
-│ ├── utils.py
-│ ├── build_database.py
-│ ├── retrieve.py
-│ └── evaluate.py
-
+│   ├── encoders.py
+│   ├── projector.py
+│   ├── model.py
+│   ├── losses.py
+│   ├── metrics.py
+│   ├── checkpoint.py
+│   └── inference.py
 │
-
 ├── training/
-│ ├── phase1.py
-│ ├── phase2.py
-│ ├── phase2_hidden.py
-│ ├── phase3_ac_v2.py
-│ └── lora_train.py
-
+│   ├── datasets.py
+│   ├── trainer.py
+│   ├── phase1.py
+│   ├── phase2.py
+│   └── phase3.py
 │
-
-├── evaluation/
-│ ├── evaluate.py
-│ ├── ablation.py
-│ ├── statistics.py
-│ └── retrieval_metrics.py
-
-│
-
-├── demo/
-│ ├── demo.py
-│ └── app.py
-
-│
-
-├── figures/
-
-│
-
-├── docs/
-
-│
-
-├── scripts/
-
-│
-
-├── datasets/
-
-│
-
 ├── checkpoints/
-
 │
-
-├── README.md
-
+├── datasets/
+│
+├── outputs/
+│
+├── figures/
+│
 ├── requirements.txt
-
-└── .gitignore
+│
+└── README.md
 ```
 
 ---
 
 # Methodology
 
-The proposed framework consists of four stages.
+The framework consists of three components:
 
-### Stage 1
+- Frozen EVA02-CLIP Vision Encoder
+- Frozen CLIP Text Encoder
+- Trainable Projection Head
 
-Input Processing
+During training:
 
-- Fashion Images
-- Fashion Captions
+- Image embeddings are extracted using the frozen vision encoder.
+- Text embeddings are extracted using the frozen CLIP text encoder.
+- Image embeddings are projected into the shared embedding space.
+- The Projection Head is optimized using the Hybrid Alignment Loss.
 
----
-
-### Stage 2
-
-Frozen Backbone
-
-Visual Encoder
-
-- EVA02-CLIP-L-14
-
-Text Encoder
-
-- CLIP
-
-Both encoders remain frozen throughout alignment training.
+Both encoders remain frozen during the entire training procedure.
 
 ---
 
-### Stage 3
+# Hybrid Alignment Loss
 
-Image Projection Alignment
-
-Only the image projection layer is trainable.
+The Projection Head is optimized using
 
 ```
-Image Embedding (768)
+Hybrid Loss
 
-↓
-
-FC Layer (768 → 1536)
-
-↓
-
-ReLU
-
-↓
-
-FC Layer (1536 → 768)
-
-↓
-
-Projected Image Embedding
-```
-
-The projected image embedding is aligned with frozen text embeddings using cosine similarity.
-
----
-
-### Stage 4
-
-Alignment Evaluation
-
-The framework computes
-
-- Positive Image-Text Similarity
-- Negative Image-Text Similarity
-- Alignment Gap
-- Retrieval Metrics
-
----
-
-# Training Strategy
-
-## Phase 1
-
-Projection Warm-up
-
-Loss
-
-- MSE
-
----
-
-## Phase 2
-
-Projection Refinement
-
-Loss
-
-- Regression Loss
-
----
-
-## Phase 3
-
-Hybrid Metric Learning
-
-Loss
-
-- InfoNCE
-- Normalized MSE
-
----
-
-# Loss Function
-
-The proposed framework optimizes
-
-\[
-\mathcal{L}
 =
-\mathcal{L}_{InfoNCE}
+
+λ × NMSE
+
 +
-\lambda
-\mathcal{L}_{NMSE}
-\]
+
+(1 − λ) × InfoNCE
+```
 
 where
 
+- NMSE improves embedding regression.
 - InfoNCE improves discriminative alignment.
-- Normalized MSE preserves embedding consistency.
 
 ---
 
 # Datasets
 
-The framework was trained and evaluated using
+The implementation supports multiple fashion datasets.
+
+Recommended datasets:
 
 - DeepFashion
 - Polyvore
-- Amazon Fashion
 - FashionIQ
+- Amazon Fashion
+
+The training CSV should contain
+
+```
+image,caption
+dress001.jpg,Red floral summer dress
+shirt017.jpg,Blue denim shirt
+...
+```
+
+Images should be stored under
+
+```
+datasets/images/
+```
 
 ---
 
 # Installation
 
-Clone repository
+Clone the repository
 
 ```bash
-git clone https://github.com/<username>/Image-Text-Alignment-Framework.git
+git clone <repository-url>
+
+cd FashionAlignment
 ```
 
-Move into repository
+Create environment
 
 ```bash
-cd Image-Text-Alignment-Framework
+python -m venv .venv
+```
+
+Activate
+
+Windows
+
+```bash
+.venv\Scripts\activate
+```
+
+Linux
+
+```bash
+source .venv/bin/activate
 ```
 
 Install dependencies
@@ -283,108 +209,147 @@ pip install -r requirements.txt
 
 # Training
 
-Phase 1
+Train the Projection Head
 
 ```bash
 python training/phase1.py
 ```
 
-Phase 2
+This trains only the Projection Head while keeping both EVA02-CLIP encoders frozen.
+
+---
+
+# Phase-2 Evaluation
+
+Evaluate the trained Projection Head
 
 ```bash
 python training/phase2.py
 ```
 
-Phase 3
+Metrics reported
 
-```bash
-python training/phase3_ac_v2.py
-```
-
----
-
-# Evaluation
-
-```bash
-python evaluation/evaluate.py
-```
-
----
-
-# Demo
-
-```bash
-python demo/demo.py
-```
-
----
-
-# Experimental Results
-
-The framework is evaluated using
-
-- Cosine Similarity
+- Mean Positive Similarity
+- Mean Negative Similarity
 - Alignment Gap
-- Mean
-- Standard Deviation
+- Positive Similarity Standard Deviation
 
 ---
 
-# Ablation Study
+# Phase-3 Refined Evaluation
 
-The following variants are compared
+Run the final evaluation
 
-| Model | Projection | Loss |
-|--------|------------|------|
-| MSE Only | ✓ | MSE |
-| Regression Only | ✓ | Regression |
-| Hybrid (Ours) | ✓ | InfoNCE + NMSE |
-| LoRA Baseline | LoRA | Contrastive |
+```bash
+python training/phase3.py
+```
 
----
-
-# Qualitative Results
-
-The repository includes
-
-- Retrieval Examples
-- Matched Image-Text Pairs
-- Mismatched Image-Text Pairs
-- OOD Validation Examples
+Results are exported for further analysis.
 
 ---
 
-# Future Work
+# Inference
 
-- Multimodal Conversational Fashion Assistant
-- User Preference Modeling
-- Style Personalization
-- Multi-turn Dialogue
-- Large-scale Fashion Retrieval
+Example
+
+```python
+from src.inference import ImageTextInference
+
+engine = ImageTextInference()
+
+score = engine.similarity(
+    "dress.jpg",
+    "Red floral summer dress"
+)
+
+print(score)
+```
+
+Ranking captions
+
+```python
+captions = [
+    "Red floral summer dress",
+    "Blue denim shirt",
+    "Black leather handbag"
+]
+
+results = engine.predict(
+    "dress.jpg",
+    captions
+)
+
+for r in results:
+    print(r)
+```
+
+---
+
+# Evaluation Metrics
+
+The repository reports
+
+- Mean Positive Similarity
+- Mean Negative Similarity
+- Alignment Gap
+- Positive Similarity Standard Deviation
+
+These correspond to the evaluation protocol described in the paper.
+
+---
+
+# Checkpoints
+
+Projection Head checkpoints are stored in
+
+```
+checkpoints/
+```
+
+Example
+
+```
+projector_phase1.pt
+
+projector_phase2.pt
+
+projector_phase3.pt
+```
+
+---
+
+# Reproducibility
+
+Random seeds are fixed throughout training.
+
+Only the Projection Head is trainable.
+
+Both EVA02-CLIP encoders remain frozen.
+
+The implementation follows the methodology described in the accompanying publication.
 
 ---
 
 # Citation
 
-```bibtex
+If you use this repository, please cite:
 
+```bibtex
+@article{YOUR_CITATION,
+  title   = {Vision-Language Models for Fashion Conversational Assistants with Multimodal Dialogues},
+  author  = {Author Names},
+  journal = {Springer},
+  year    = {2026}
+}
 ```
 
-
-
 ---
 
-# Contact
+# Acknowledgements
 
-For questions regarding this work, please open an issue in this repository.
+This work builds upon the following open-source projects:
 
----
-
-## Acknowledgement
-
-This work utilizes
-
-- PyTorch
-- Hugging Face Transformers
+- OpenCLIP
 - EVA02-CLIP
-- EVA02
+- PyTorch
+- Hugging Face
