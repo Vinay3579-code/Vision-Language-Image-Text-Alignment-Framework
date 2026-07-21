@@ -408,8 +408,10 @@ For reliable evaluation,
 
 # Summary
 
-The evaluation framework focuses on embedding-level semantic alignment using cosine similarity. Rather than measuring downstream retrieval performance, it analyzes how effectively the Projection Head reshapes image embeddings into the shared text embedding space.
+# Summary
+
+The proposed evaluation framework assesses embedding-level image-text alignment using cosine similarity between projected image embeddings and frozen text embeddings. Performance is measured using Positive Similarity, Negative Similarity, Alignment Gap, and Positive Similarity Standard Deviation.
+
+Experimental results show that the Hybrid Alignment Loss improves semantic discrimination while training fewer than **2.4 million** parameters, demonstrating that effective vision-language alignment can be achieved without end-to-end fine-tuning. This lightweight evaluation pipeline provides a reliable and reproducible way to analyze semantic alignment in fashion vision-language models.
 
 For additional implementation details and mathematical derivations, refer to the accompanying Springer paper.
-
-The reported metrics—Positive Similarity, Negative Similarity, Alignment Gap, and Positive Similarity Standard Deviation—provide a comprehensive assessment of semantic discrimination and alignment quality while maintaining the computational efficiency of frozen
