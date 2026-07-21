@@ -7,17 +7,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import open_clip
 
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    BitsAndBytesConfig,
-)
 
 from configs.config import (
     DEVICE,
     VISION_MODEL,
     VISION_PRETRAINED,
-    TEXT_MODEL,
 )
 
 
@@ -39,6 +33,7 @@ class FrozenImageEncoder(nn.Module):
 
         self.encoder = model.visual
         self.preprocess = preprocess
+        self.tokenizer = open_clip.get_tokenizer(VISION_MODEL)
 
         self.encoder.eval()
 
@@ -54,44 +49,25 @@ class FrozenImageEncoder(nn.Module):
 
 
 class FrozenTextEncoder(nn.Module):
+    class FrozenTextEncoder(nn.Module):
     """
-    Phi-3.5 text encoder.
+    Frozen CLIP text encoder.
 
-    Sentence embeddings are obtained by mean pooling the
-    last hidden state.
+    The encoder remains frozen during training and produces
+    normalized text embeddings in the shared image-text
+    embedding space.
     """
 
-    def __init__(
-        self,
-        load_in_4bit: bool = True,
-    ):
+    def __init__(self):
         super().__init__()
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            TEXT_MODEL,
-            trust_remote_code=True,
+        model, _, _ = open_clip.create_model_and_transforms(
+            VISION_MODEL,
+            pretrained=VISION_PRETRAINED,
         )
 
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-
-        quantization = None
-
-        if load_in_4bit and torch.cuda.is_available():
-
-            quantization = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=torch.float16,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4",
-            )
-
-        self.encoder = AutoModelForCausalLM.from_pretrained(
-            TEXT_MODEL,
-            trust_remote_code=True,
-            device_map="auto" if torch.cuda.is_available() else None,
-            quantization_config=quantization,
-        )
+        self.encoder = model
+        self.tokenizer = open_clip.get_tokenizer(VISION_MODEL)
 
         self.encoder.eval()
 
@@ -104,26 +80,10 @@ class FrozenTextEncoder(nn.Module):
         texts: list[str],
     ) -> torch.Tensor:
 
-        tokens = self.tokenizer(
-            texts,
-            padding=True,
-            truncation=True,
-            return_tensors="pt",
-        )
+        tokens = self.tokenizer(texts)
 
-        tokens = {
-            key: value.to(DEVICE)
-            for key, value in tokens.items()
-        }
+        tokens = tokens.to(DEVICE)
 
-        outputs = self.encoder(
-            **tokens,
-            output_hidden_states=True,
-            return_dict=True,
-        )
-
-        hidden = outputs.hidden_states[-1]
-
-        embeddings = hidden.mean(dim=1)
+        embeddings = self.encoder.encode_text(tokens)
 
         return F.normalize(embeddings, dim=-1)
