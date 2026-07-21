@@ -120,8 +120,14 @@ def load_projector(
     filepath: str | Path,
     map_location="cpu",
 ) -> None:
-  
-    # Load projector weights only.
+    """
+    Load the trained Projection Head weights.
+
+    This utility restores only the trainable projection
+    head, while the frozen EVA02-CLIP encoders are loaded
+    independently from their pretrained checkpoints.
+    """
+    
     filepath = Path(filepath)
 
     if not filepath.exists():
@@ -143,15 +149,21 @@ def load_projector(
             strict=False,
         )
 
-    print(f"Projector loaded from: {filepath}")
+    print(f"Projection Head loaded from: {filepath}")
 
 
 def save_projector(
     projector,
     filepath: str | Path,
 ) -> None:
+    """
+    Save only the trained Projection Head.
 
-    # Save projector weights only.
+    The vision and text encoders remain frozen and are
+    restored directly from the pretrained EVA02-CLIP
+    checkpoint during model initialization.
+    """
+    
     filepath = Path(filepath)
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
@@ -160,4 +172,4 @@ def save_projector(
         filepath,
     )
 
-    print(f"Projector saved to: {filepath}")
+    print(f"Projection Head saved to: {filepath}")
