@@ -25,11 +25,13 @@ The framework learns a shared embedding space where projected visual embeddings 
 
 - Phase-wise Image–Text Alignment Framework
 - Frozen EVA02-CLIP Vision Encoder
-- Frozen Phi-3.5 Text Embedding Space
+- Frozen CLIP Text Embedding Space
 - Lightweight Trainable Projection Layer
 - Metric Learning based Alignment
 - Hybrid InfoNCE + Normalized MSE Optimization
-- Efficient Fashion Retrieval
+- Positive Image-Text Similarity
+- Negative Image-Text Similarity
+- Alignment Gap
 - Out-of-Domain (OOD) Validation
 - Ablation Studies
 - LoRA Baseline Comparison
@@ -144,7 +146,7 @@ Visual Encoder
 
 Text Encoder
 
-- Phi-3.5-mini-Instruct
+- CLIP
 
 Both encoders remain frozen throughout alignment training.
 
@@ -321,11 +323,6 @@ python demo/demo.py
 
 The framework is evaluated using
 
-- Recall@1
-- Recall@5
-- Recall@10
-- Image-to-Text Retrieval
-- Text-to-Image Retrieval
 - Cosine Similarity
 - Alignment Gap
 - Mean
@@ -370,15 +367,10 @@ The repository includes
 # Citation
 
 ```bibtex
-@article{yourpaper2026,
-  title={Image-Text Alignment Framework for Fashion Vision-Language Models},
-  author={Your Name and Coauthors},
-  journal={Under Review},
-  year={2026}
-}
+
 ```
 
-(Update this after paper acceptance.)
+
 
 ---
 
@@ -394,6 +386,5 @@ This work utilizes
 
 - PyTorch
 - Hugging Face Transformers
-- OpenCLIP
+- EVA02-CLIP
 - EVA02
-- Phi-3.5
