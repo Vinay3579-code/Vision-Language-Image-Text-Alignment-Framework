@@ -408,8 +408,6 @@ For reliable evaluation,
 
 # Summary
 
-# Summary
-
 The proposed evaluation framework assesses embedding-level image-text alignment using cosine similarity between projected image embeddings and frozen text embeddings. Performance is measured using Positive Similarity, Negative Similarity, Alignment Gap, and Positive Similarity Standard Deviation.
 
 Experimental results show that the Hybrid Alignment Loss improves semantic discrimination while training fewer than **2.4 million** parameters, demonstrating that effective vision-language alignment can be achieved without end-to-end fine-tuning. This lightweight evaluation pipeline provides a reliable and reproducible way to analyze semantic alignment in fashion vision-language models.
