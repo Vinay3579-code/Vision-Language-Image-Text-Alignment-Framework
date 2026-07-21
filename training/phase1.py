@@ -1,10 +1,11 @@
 """
 Phase 1 Training.
 
-This stage initializes the Projection Head using the
-Normalized Mean Squared Error (NMSE) loss while keeping
-both the EVA02-CLIP vision encoder and text encoder
-frozen.
+This stage trains the Projection Head using the
+Hybrid Alignment Loss, combining Normalized Mean
+Squared Error (NMSE) and InfoNCE while keeping both
+the EVA02-CLIP vision encoder and CLIP text encoder
+completely frozen.
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ from src.seed import (
 )
 
 from src.model import ImageTextAlignmentModel
-from src.losses import NormalizedMSELoss
+from src.losses import HybridAlignmentLoss
 from training.datasets import FashionDataset
 from training.trainer import Trainer
 
@@ -65,7 +66,7 @@ def main():
 
     trainer = Trainer(
         model=model,
-        loss_fn=NormalizedMSELoss(),
+        loss_fn=HybridAlignmentLoss(),
         optimizer=optimizer,
         device=model.projector.network[0].weight.device,
         checkpoint_path=CHECKPOINTS["phase1"],
