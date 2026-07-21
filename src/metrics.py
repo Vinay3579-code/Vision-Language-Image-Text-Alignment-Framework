@@ -1,8 +1,15 @@
-# Evaluation metrics for image-text retrieval.
+"""
+Evaluation metrics for the Image-Text Alignment Framework.
+
+The proposed framework evaluates the quality of the learned shared
+embedding space using cosine similarity statistics rather than
+retrieval metrics.
+"""
 
 from __future__ import annotations
 
-import numpy as np
+from typing import Dict
+
 import torch
 import torch.nn.functional as F
 
@@ -11,118 +18,132 @@ def cosine_similarity_matrix(
     image_embeddings: torch.Tensor,
     text_embeddings: torch.Tensor,
 ) -> torch.Tensor:
+    """
+    Compute the cosine similarity matrix between image and
+    text embeddings.
+    """
 
-    # Compute the cosine similarity matrix between image and text embeddings.
     image_embeddings = F.normalize(image_embeddings, dim=-1)
     text_embeddings = F.normalize(text_embeddings, dim=-1)
 
     return image_embeddings @ text_embeddings.T
 
 
-def compute_ranks(
+def mean_positive_similarity(
     similarity_matrix: torch.Tensor,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> torch.Tensor:
+    """
+    Compute the mean cosine similarity of matching
+    image-text pairs.
+    """
 
-    # Compute image-to-text and text-to-image retrieval ranks.
-    similarity = similarity_matrix.cpu().numpy()
-
-    num_samples = similarity.shape[0]
-
-    i2t_ranks = np.empty(num_samples, dtype=np.int32)
-    t2i_ranks = np.empty(num_samples, dtype=np.int32)
-
-    for i in range(num_samples):
-        ranking = np.argsort(-similarity[i])
-        i2t_ranks[i] = np.where(ranking == i)[0][0] + 1
-
-    for i in range(num_samples):
-        ranking = np.argsort(-similarity[:, i])
-        t2i_ranks[i] = np.where(ranking == i)[0][0] + 1
-
-    return i2t_ranks, t2i_ranks
+    return similarity_matrix.diag().mean()
 
 
-def recall_at_k(
-    ranks: np.ndarray,
-    k: int,
-) -> float:
+def mean_negative_similarity(
+    similarity_matrix: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Compute the mean cosine similarity of all
+    non-matching image-text pairs.
+    """
 
-    # Compute Recall@K.
-    return float(np.mean(ranks <= k) * 100)
+    num_samples = similarity_matrix.size(0)
 
+    mask = ~torch.eye(
+        num_samples,
+        dtype=torch.bool,
+        device=similarity_matrix.device,
+    )
 
-def mean_rank(
-    ranks: np.ndarray,
-) -> float:
-
-    # Compute Mean Rank.
-    return float(np.mean(ranks))
-
-
-def median_rank(
-    ranks: np.ndarray,
-) -> float:
-
-    # Compute Median Rank.
-    return float(np.median(ranks))
+    return similarity_matrix[mask].mean()
 
 
-def mean_reciprocal_rank(
-    ranks: np.ndarray,
-) -> float:
+def alignment_gap(
+    positive_similarity: torch.Tensor,
+    negative_similarity: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Compute the Alignment Gap.
 
-    # Compute Mean Reciprocal Rank (MRR).
-    return float(np.mean(1.0 / ranks))
+    Alignment Gap =
+        Mean Positive Similarity
+        -
+        Mean Negative Similarity
+    """
+
+    return positive_similarity - negative_similarity
 
 
-def evaluate_retrieval(
+def similarity_std(
+    similarity_matrix: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Compute the standard deviation of the positive
+    cosine similarities.
+    """
+
+    return similarity_matrix.diag().std(unbiased=False)
+
+
+def evaluate_alignment(
     image_embeddings: torch.Tensor,
     text_embeddings: torch.Tensor,
-) -> dict:
+) -> Dict[str, float]:
+    """
+    Evaluate the alignment quality of the shared
+    image-text embedding space.
+    """
 
-    # Evaluate retrieval performance for a single run.
     similarity = cosine_similarity_matrix(
         image_embeddings,
         text_embeddings,
     )
 
-    i2t_ranks, t2i_ranks = compute_ranks(similarity)
+    positive = mean_positive_similarity(similarity)
+
+    negative = mean_negative_similarity(similarity)
+
+    gap = alignment_gap(
+        positive,
+        negative,
+    )
+
+    std = similarity_std(similarity)
 
     return {
-
-        "I2T": {
-            "R@1": recall_at_k(i2t_ranks, 1),
-            "R@5": recall_at_k(i2t_ranks, 5),
-            "R@10": recall_at_k(i2t_ranks, 10),
-            "Mean Rank": mean_rank(i2t_ranks),
-            "Median Rank": median_rank(i2t_ranks),
-            "MRR": mean_reciprocal_rank(i2t_ranks),
-        },
-
-        "T2I": {
-            "R@1": recall_at_k(t2i_ranks, 1),
-            "R@5": recall_at_k(t2i_ranks, 5),
-            "R@10": recall_at_k(t2i_ranks, 10),
-            "Mean Rank": mean_rank(t2i_ranks),
-            "Median Rank": median_rank(t2i_ranks),
-            "MRR": mean_reciprocal_rank(t2i_ranks),
-        },
+        "Mean Positive Similarity": positive.item(),
+        "Mean Negative Similarity": negative.item(),
+        "Alignment Gap": gap.item(),
+        "Standard Deviation": std.item(),
     }
 
 
 def print_metrics(
-    metrics: dict,
+    metrics: Dict[str, float],
 ) -> None:
-  
-    # Print retrieval metrics.
-    for task in ("I2T", "T2I"):
 
-        print(f"\n{task} Retrieval")
-        print("-" * 30)
+    # Print the alignment evaluation metrics.
 
-        print(f"Recall@1     : {metrics[task]['R@1']:.2f}")
-        print(f"Recall@5     : {metrics[task]['R@5']:.2f}")
-        print(f"Recall@10    : {metrics[task]['R@10']:.2f}")
-        print(f"Mean Rank    : {metrics[task]['Mean Rank']:.2f}")
-        print(f"Median Rank  : {metrics[task]['Median Rank']:.2f}")
-        print(f"MRR          : {metrics[task]['MRR']:.4f}")
+    print("\nAlignment Evaluation")
+    print("-" * 40)
+
+    print(
+        f"Mean Positive Similarity : "
+        f"{metrics['Mean Positive Similarity']:.4f}"
+    )
+
+    print(
+        f"Mean Negative Similarity : "
+        f"{metrics['Mean Negative Similarity']:.4f}"
+    )
+
+    print(
+        f"Alignment Gap            : "
+        f"{metrics['Alignment Gap']:.4f}"
+    )
+
+    print(
+        f""Positive Similarity Standard Deviation"       : "
+        f"{metrics['"Positive Similarity Standard Deviation"']:.4f}"
+    )
