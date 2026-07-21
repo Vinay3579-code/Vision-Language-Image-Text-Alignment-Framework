@@ -386,7 +386,7 @@ Compared with end-to-end multimodal fine-tuning, the proposed framework offers s
 |---------|-------------------|
 | Vision Encoder | Frozen |
 | Text Encoder | Frozen |
-| Trainable Parameters | ~2.4 Million |
+| Trainable Parameters | 2.4 Million |
 | Fine-tuning | Projection Head Only |
 | Cross Attention | No |
 | Feature Fusion | No |
