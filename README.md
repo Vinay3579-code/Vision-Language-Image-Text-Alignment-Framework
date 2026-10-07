@@ -329,11 +329,16 @@ The implementation follows the methodology described in the accompanying publica
 If you use this repository, please cite:
 
 ```bibtex
-@article{YOUR_CITATION,
-  title   = {Vision-Language Models for Fashion Conversational Assistants with Multimodal Dialogues},
-  author  = {Author Names},
-  journal = {Springer},
-  year    = {2026}
+@article{Madgi2026ParameterEfficient,
+  author  = {Madgi, Vinay M. and Gidnandi, Sahana and D, Nisha and H, Kshitij and Muttal, Channabasappa},
+  title   = {Parameter-Efficient Adaptation of Vision--Language Models for Domain-Specific Multimedia Retrieval in Fashion},
+  journal = {Multimedia Tools and Applications},
+  year    = {2026},
+  volume  = {85},
+  number  = {10},
+  article = {793},
+  doi     = {10.1007/s11042-026-21961-9},
+  url     = {https://doi.org/10.1007/s11042-026-21961-9}
 }
 ```
 
