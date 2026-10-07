@@ -2,7 +2,7 @@
 
 Official implementation of the image-text alignment framework proposed in the Springer publication:
 
-> **Vision-Language Models for Fashion Conversational Assistants with Multimodal Dialogues**
+> **Parameter-Efficient adaptation of vision–language models for domain-specific multimedia retrieval in fashion**
 
 This repository implements a lightweight image-text alignment framework for the fashion domain using a **frozen EVA02-CLIP foundation model** and a **trainable Projection Head** optimized with a **Hybrid Alignment Loss**.
 
