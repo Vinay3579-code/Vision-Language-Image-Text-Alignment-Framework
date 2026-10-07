@@ -9,7 +9,7 @@ This repository implements a lightweight image-text alignment framework for the 
 <p align="center">
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)]()
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.x-red.svg)]()
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.13-red.svg)]()
 [![Transformers](https://img.shields.io/badge/HuggingFace-Transformers-yellow.svg)]()
 [![OpenCLIP](https://img.shields.io/badge/OpenCLIP-EVA02--L14-green.svg)]()
 
