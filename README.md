@@ -168,7 +168,7 @@ datasets/images/
 Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone github.com/Vinay3579-code/Vision-Language-Image-Text-Alignment-Framework
 
 cd FashionAlignment
 ```
