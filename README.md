@@ -352,3 +352,7 @@ This work builds upon the following open-source projects:
 - EVA02-CLIP
 - PyTorch
 - Hugging Face
+
+---
+
+# License
