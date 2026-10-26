@@ -344,26 +344,6 @@ The implementation follows the methodology described in the accompanying publica
 
 ---
 
-# Citation
-
-If you use this repository, please cite:
-
-```bibtex
-@article{Madgi2026ParameterEfficient,
-  author  = {Madgi, Vinay M. and Gidnandi, Sahana and D, Nisha and H, Kshitij and Muttal, Channabasappa},
-  title   = {Parameter-Efficient Adaptation of Vision--Language Models for Domain-Specific Multimedia Retrieval in Fashion},
-  journal = {Multimedia Tools and Applications},
-  year    = {2026},
-  volume  = {85},
-  number  = {10},
-  article = {793},
-  doi     = {10.1007/s11042-026-21961-9},
-  url     = {https://doi.org/10.1007/s11042-026-21961-9}
-}
-```
-
----
-
 # Acknowledgements
 
 This work builds upon the following open-source projects:
